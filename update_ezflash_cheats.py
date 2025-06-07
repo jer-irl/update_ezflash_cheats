@@ -1,50 +1,12 @@
 """
-Overview
-========
-
 This utility is intended to scrape and merge the libretro GBA cheat database
 with the one provided by EZ-Flash for their Omega line of devices.  This will
 give better English descriptions, and many times higher-quality cheats.
 
 The command-line interface is self-documented.  Pass a `--help` flag to the
-base script or after one of the subcommands for more information.  Try a command
-like `python3 update_ezflash_cheats.py --help` or
+base script or after one of the subcommands for more information.  Try a
+command like `python3 update_ezflash_cheats.py --help` or
 `python3 update_ezflash_cheats.py patch --help` for more information.
-
-Current Status
-==============
-
-Currently tested with libretro-database v1.8.2, and requires a recent Python 3.
-I have only tested the script with Python 3.8.5 on Ubuntu.  Other than Python and
-the input files, there should be no other dependencies.
-
-The flakiest part of this utility is the correlation between ROM names as listed
-in DAT files, and the corresponding libretro-database *.cht file.  I've tried
-tracing how RetroArch does this in its *.rdb database, but I haven't yet found
-that functionality in the code.
-
-Changelog
-=========
-
-0.1.0:
-- Initial pre-release!
-
-References
-==========
-
-- [EZ-Flash Omega Definitive Edition kernel source](https://github.com/ez-flash/omega-de-kernel)
-- [Previous similar effort by largemoose421](https://gbatemp.net/threads/simple-action-replay-to-ez-flash-omega-cht-converter.559163/#post-8964955)
-- [Overview on hardware-based game cheats](https://macrox.gshi.org/The%20Hacking%20Text.htm)
-- [Documentation of Code Breaker cheat format](https://www.sappharad.com/gba/codes/codebreaker-code-creation)
-- [RetroArch cheat documentation (not too useful)](https://github.com/libretro/docs/blob/master/docs/guides/cheat-codes.md)
-- [EZ-Flash Omega cheat tutorial/guide](https://www.reddit.com/r/Gameboy/comments/hcq2g6/ezflash_omega_cheat_system_tutorial/)
-
-Resources
-=========
-
-- [EZ-Flash Omega cheat library download link (zipped)](https://www.ezflash.cn/zip/omegacheatlibrary.zip)
-- [libretro-database master branch download link (zipped)](https://github.com/libretro/libretro-database/archive/refs/heads/master.zip)
-- [DAT file download page](https://datomatic.no-intro.org/index.php?page=download&op=dat&s=23)
 """
 
 __version__ = "0.1.0"
@@ -104,7 +66,8 @@ def parse_libretro_cheats_from_file(libretro_cheat_path: Path) -> List[LibretroC
             if len(line.strip()) == 0:
                 continue
 
-            key, val = line[:line.find("=")].strip(), line[line.find("=") + 1:].strip()
+            key, val = line[:line.find("=")].strip(
+            ), line[line.find("=") + 1:].strip()
             if key == "cheats":
                 expected_num_cheats = int(val)
                 continue
@@ -147,7 +110,8 @@ def convert_libretro_cheat_to_ezflash(libretro_cheat: LibretroCheat) -> str:
             addr_tok = toks[i]
             value_tok = toks[i + 1]
         except IndexError:
-            raise LibretroParseError("Unexpected number of tokens in Libretro cheat")
+            raise LibretroParseError(
+                "Unexpected number of tokens in Libretro cheat")
 
         if len(addr_tok) != 8:
             raise LibretroParseError(
@@ -155,7 +119,8 @@ def convert_libretro_cheat_to_ezflash(libretro_cheat: LibretroCheat) -> str:
             )
 
         if not all(c in "0123456789ABCDEF" for c in value_tok):
-            raise LibretroCheatUnsupportedError(f"Value is not hexadecimal ({value_tok})")
+            raise LibretroCheatUnsupportedError(
+                f"Value is not hexadecimal ({value_tok})")
 
         # Switch based on the Code Breaker code type, as described here
         # https://www.sappharad.com/gba/codes/codebreaker-code-creation
@@ -164,11 +129,14 @@ def convert_libretro_cheat_to_ezflash(libretro_cheat: LibretroCheat) -> str:
         if addr_tok[0] == "3":
             cheat_directives.append(f"4{addr_tok[-4:]},{value_tok[-2:]}")
         elif addr_tok[0] == "8":
-            cheat_directives.append(f"4{addr_tok[-4:]},{value_tok[2:]},{value_tok[:2]}")
+            cheat_directives.append(
+                f"4{addr_tok[-4:]},{value_tok[2:]},{value_tok[:2]}")
         elif addr_tok[0] in ["4", "6", "7", "A", "D"]:
-            raise LibretroCheatUnsupportedError(f"Code Breaker cheat type {addr_tok[0]} is not supported")
+            raise LibretroCheatUnsupportedError(
+                f"Code Breaker cheat type {addr_tok[0]} is not supported")
         else:
-            raise LibretroParseError(f"Unknown Code Breaker cheat code type of '{addr_tok[0]}'")
+            raise LibretroParseError(
+                f"Unknown Code Breaker cheat code type of '{addr_tok[0]}'")
 
     result += ";".join(cheat_directives)
 
@@ -195,11 +163,12 @@ def patch_ezflash_cht_file(ezflash_cht_path: Path, libretro_cht_path: Path):
     libretro_cheats = parse_libretro_cheats_from_file(libretro_cht_path)
     ezflash_cheats = []
     for libretro_cheat in libretro_cheats:
-        try: 
-            ezflash_cheats.append(convert_libretro_cheat_to_ezflash(libretro_cheat))
+        try:
+            ezflash_cheats.append(
+                convert_libretro_cheat_to_ezflash(libretro_cheat))
         except (LibretroCheatUnsupportedError, LibretroParseError) as err:
             logging.warning(f"Skipping libretro cheat...{err}")
-    
+
     with open(ezflash_cht_path, "rb") as cht_file:
         original_cht_file_contents = cht_file.read()
 
@@ -207,8 +176,9 @@ def patch_ezflash_cht_file(ezflash_cht_path: Path, libretro_cht_path: Path):
         cht_file_writable.write("\n\n".join(ezflash_cheats).encode("utf-8"))
         cht_file_writable.write(b"\n\n")
         cht_file_writable.write(original_cht_file_contents)
-    
-    logging.info(f"Patched {str(ezflash_cht_path)} successfully, added {len(ezflash_cheats)} cheats")
+
+    print(
+        f"Patched {str(ezflash_cht_path)} successfully, added {len(ezflash_cheats)} cheats")
 
 
 def patch(ezflash_cheats_dir: Path, datfile_path: Path, libretro_database_dir: Path):
@@ -223,17 +193,20 @@ def patch(ezflash_cheats_dir: Path, datfile_path: Path, libretro_database_dir: P
         try:
             rom_name = rom.attrib["name"]
             rom_serial_code = rom.attrib["serial"]
-            serial_code_to_name[rom_serial_code] = rom_name[:rom_name.rfind(".")][:rom_name.find("(")].strip()
+            serial_code_to_name[rom_serial_code] = rom_name[:rom_name.rfind(
+                ".")][:rom_name.find("(")][:rom_name.find("&")].strip()
         except KeyError:
             # Assume this is BIOS entry
-            logging.warning(f"Skipping ROM without `serial` field, this should be a BIOS file (name: {rom_name})")
+            logging.warning(
+                f"Skipping ROM without `serial` field, this should be a BIOS file (name: {rom_name})")
             pass
 
     libretro_cheat_dir = libretro_database_dir / LIBRETRO_GBA_CHEATS_DIRNAME
     libretro_game_name_to_cheat_path = {}
     for path in libretro_cheat_dir.iterdir():
-        game_name = path.name[:path.name.rfind(".")][:path.name.find("(")].strip()
-        libretro_game_name_to_cheat_path[game_name] = path
+        game_name_prefix = path.name[:path.name.rfind(
+            ".")][:path.name.find("(")][:path.name.find("_")].strip()
+        libretro_game_name_to_cheat_path[game_name_prefix] = path
 
     with open(game2id_map_path, "r") as game2id_map_file:
         # Each DB entry is 8 characters long, first 4 chars is the serial code,
@@ -245,22 +218,29 @@ def patch(ezflash_cheats_dir: Path, datfile_path: Path, libretro_database_dir: P
             try:
                 game_name = serial_code_to_name[game_serial_code]
             except KeyError:
-                logging.warning(f"Could not find game with serial code {game_serial_code}")
+                logging.warning(
+                    f"Could not find game with serial code {game_serial_code}")
                 continue
-            libretro_cheat_file_path = libretro_game_name_to_cheat_path.get(game_name)
+            libretro_cheat_file_path = libretro_game_name_to_cheat_path.get(
+                game_name)
             if libretro_cheat_file_path is None:
-                logging.warning(f"No libretro cheats for game name {game_name}, serial {game_serial_code}, numeric ID {str(game_numeric_id).zfill(4)}")
+                logging.warning(
+                    f"No libretro cheats for game name {game_name}, serial {game_serial_code}, numeric ID {str(game_numeric_id).zfill(4)}")
                 continue
 
-            cheat_file_numbered_subdir = Path(str(game_numeric_id - (game_numeric_id % 200)).zfill(4))
+            cheat_file_numbered_subdir = Path(
+                str(game_numeric_id - (game_numeric_id % 200)).zfill(4))
             target_cheat_file_path = (
-                ezflash_cheats_dir / ENGLISH_CHEATS_DIRNAME / cheat_file_numbered_subdir / f"{str(game_numeric_id).zfill(4)}.cht"
+                ezflash_cheats_dir / ENGLISH_CHEATS_DIRNAME /
+                cheat_file_numbered_subdir /
+                f"{str(game_numeric_id).zfill(4)}.cht"
             )
 
             if not target_cheat_file_path.exists():
                 create_stub_ezflash_cht_file(target_cheat_file_path)
 
-            patch_ezflash_cht_file(target_cheat_file_path, libretro_cheat_file_path)
+            patch_ezflash_cht_file(
+                target_cheat_file_path, libretro_cheat_file_path)
 
 
 def main_patch(args: argparse.Namespace):
@@ -281,11 +261,12 @@ def main():
     """
     CLI entry point, not intended to be used by external modules
     """
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         "-v",
         "--verbose",
-        action="count", 
+        action="count",
         default=0,
         help="Can be specified multiple times in order to get more verbose output, like `-vvvv` for maximum verbosity",
     )
@@ -297,11 +278,11 @@ def main():
         help="Patch a local CHEATS directory with cheats obtained from the libretro-database repository",
     )
     patch_parser.add_argument(
-        "-c", 
-        "--cheats-db", 
+        "-c",
+        "--cheats-db",
         metavar="CHEATS",
-        nargs=1, 
-        required=True, 
+        nargs=1,
+        required=True,
         type=Path,
         help="Path to pre-downloaded unzipped CHEATS directory as downloaded from ezflash.cn.  THIS WILL BE MODIFIED.",
     )
