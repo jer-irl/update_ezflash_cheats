@@ -59,4 +59,4 @@ The flakiest part of this utility is the correlation between ROM names as listed
 - [EZ-Flash Omega cheat library download link (zipped)](https://www.ezflash.cn/zip/omegacheatlibrary.zip)
 - [libretro-database master branch download link (zipped)](https://github.com/libretro/libretro-database/archive/refs/heads/master.zip)
 - [DAT file download page](https://datomatic.no-intro.org/index.php?page=download&op=dat&s=23)
-
+	- *NOTE:* Make sure you don't accidentally fetch a "Game Boy Advance (e-Reader)" `.dat` file, only the plain Game Boy Advance file.  The link above should bring you to the right place.  A quick check is to Ctrl-F for "zelda" in the `.dat` file.  It should be contained in the file, but won't be if you accidentally grabbed the e-Reader version.
